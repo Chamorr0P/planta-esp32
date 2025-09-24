@@ -2,146 +2,89 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Monitoramento de Planta</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Monitoramento em Tempo Real</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
   <style>
     body {
-      background-color: #121212;
-      color: #f0f0f0;
+      background: #111;
+      color: white;
       font-family: Arial, sans-serif;
-      padding: 20px;
-      text-align: center;
+      margin: 0;
+      padding: 0;
     }
-    h1 { margin-bottom: 30px; }
-    .grid {
+
+    h1 {
+      text-align: center;
+      padding: 1rem;
+    }
+
+    /* Grid responsivo para os gráficos */
+    .container {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 20px;
-      justify-items: center;
+      gap: 1rem;
+      padding: 1rem;
     }
+
+    .grafico {
+      background: #222;
+      padding: 1rem;
+      border-radius: 12px;
+    }
+
     canvas {
-      background: #1e1e1e;
-      border-radius: 10px;
-      padding: 10px;
-      max-width: 100%;
+      width: 100% !important;
+      height: auto !important;
     }
   </style>
 </head>
 <body>
   <h1>Monitoramento em Tempo Real</h1>
-  <div class="grid">
-    <canvas id="tempExterna"></canvas>
-    <canvas id="tempInterna"></canvas>
-    <canvas id="umSolo"></canvas>
-    <canvas id="umInterna"></canvas>
-    <canvas id="peso"></canvas>
-    <canvas id="luminosidade"></canvas>
-    <canvas id="co2"></canvas>
-    <canvas id="umExterna"></canvas>
+  <div class="container">
+    <div class="grafico"><canvas id="chart1"></canvas></div>
+    <div class="grafico"><canvas id="chart2"></canvas></div>
+    <div class="grafico"><canvas id="chart3"></canvas></div>
+    <div class="grafico"><canvas id="chart4"></canvas></div>
   </div>
 
   <script>
-    // === CONFIGURAÇÕES DO FIREBASE ===
-    const firebaseConfig = {
-      apiKey: "SUA_API_KEY",
-      authDomain: "SEU_PROJETO.firebaseapp.com",
-      databaseURL: "https://SEU_PROJETO.firebaseio.com",
-      projectId: "SEU_PROJETO",
-      storageBucket: "SEU_PROJETO.appspot.com",
-      messagingSenderId: "SENDER_ID",
-      appId: "APP_ID"
+    const options = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: {
+            color: 'white',
+            font: { size: Math.max(12, window.innerWidth / 80) }
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { color: 'white' } },
+        y: { ticks: { color: 'white' } }
+      }
     };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
 
-    // === FUNÇÃO PARA CRIAR UM GRÁFICO ===
-    function criarGrafico(ctx, label, cor) {
-      return new Chart(ctx, {
+    function criarGrafico(id) {
+      new Chart(document.getElementById(id), {
         type: 'line',
         data: {
-          labels: [],
+          labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai'],
           datasets: [{
-            label: label,
-            data: [],
-            borderColor: cor,
-            backgroundColor: cor + '33',
-            tension: 0.3
+            label: 'Dados',
+            data: [5, 10, 7, 12, 8],
+            borderColor: 'cyan'
           }]
         },
-        options: {
-          responsive: true,
-          plugins: { legend: { labels: { color: '#f0f0f0' } } },
-          scales: {
-            x: { ticks: { color: '#f0f0f0' } },
-            y: { ticks: { color: '#f0f0f0' } }
-          }
-        }
+        options
       });
     }
 
-    // === CRIAR OS 8 GRÁFICOS ===
-    const charts = {
-      tempExterna: criarGrafico(document.getElementById('tempExterna'), 'Temperatura Externa (°C)', '#ff5722'),
-      tempInterna: criarGrafico(document.getElementById('tempInterna'), 'Temperatura Interna (°C)', '#ff9800'),
-      umSolo: criarGrafico(document.getElementById('umSolo'), 'Umidade do Solo (%)', '#4caf50'),
-      umInterna: criarGrafico(document.getElementById('umInterna'), 'Umidade Interna (%)', '#03a9f4'),
-      peso: criarGrafico(document.getElementById('peso'), 'Peso (kg)', '#9c27b0'),
-      luminosidade: criarGrafico(document.getElementById('luminosidade'), 'Luminosidade (%)', '#fdd835'),
-      co2: criarGrafico(document.getElementById('co2'), 'CO₂ Interno (ppm)', '#e91e63'),
-      umExterna: criarGrafico(document.getElementById('umExterna'), 'Umidade Externa (%)', '#00bcd4')
-    };
-
-    // === FUNÇÃO PARA BUSCAR DADOS DO FIREBASE ===
-    function atualizarGraficos() {
-      const caminho = 'plantaMonitoramento';
-      db.ref(caminho).once('value').then(snapshot => {
-        const dados = snapshot.val();
-        if (!dados) return;
-
-        const now = new Date().toLocaleTimeString();
-
-        // Atualiza cada gráfico com o valor atual
-        charts.tempExterna.data.labels.push(now);
-        charts.tempExterna.data.datasets[0].data.push(dados.temperaturaExterna);
-
-        charts.tempInterna.data.labels.push(now);
-        charts.tempInterna.data.datasets[0].data.push(dados.temperaturaInterna);
-
-        charts.umSolo.data.labels.push(now);
-        charts.umSolo.data.datasets[0].data.push(dados.umidadeSolo);
-
-        charts.umInterna.data.labels.push(now);
-        charts.umInterna.data.datasets[0].data.push(dados.umidadeInterna);
-
-        charts.peso.data.labels.push(now);
-        charts.peso.data.datasets[0].data.push(dados.peso);
-
-        charts.luminosidade.data.labels.push(now);
-        charts.luminosidade.data.datasets[0].data.push(dados.luminosidade);
-
-        charts.co2.data.labels.push(now);
-        charts.co2.data.datasets[0].data.push(dados.co2Interno);
-
-        charts.umExterna.data.labels.push(now);
-        charts.umExterna.data.datasets[0].data.push(dados.umidadeExterna);
-
-        // Atualiza todos os gráficos
-        for (let key in charts) {
-          if (charts[key].data.labels.length > 10) {
-            charts[key].data.labels.shift();
-            charts[key].data.datasets[0].data.shift();
-          }
-          charts[key].update();
-        }
-      });
-    }
-
-    // Atualiza os gráficos a cada 3 horas (10800000 ms)
-    atualizarGraficos(); // Atualização inicial
-    setInterval(atualizarGraficos, 10800000);
+    criarGrafico('chart1');
+    criarGrafico('chart2');
+    criarGrafico('chart3');
+    criarGrafico('chart4');
   </script>
 </body>
 </html>
