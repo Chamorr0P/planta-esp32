@@ -7,8 +7,8 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
-      background: #111;
-      color: white;
+      background: #121212;
+      color: #fff;
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
@@ -17,25 +17,33 @@
     h1 {
       text-align: center;
       padding: 1rem;
+      font-size: 1.5rem;
     }
 
-    /* Grid responsivo para os gráficos */
     .container {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); /* Dois gráficos por linha */
       gap: 1rem;
       padding: 1rem;
+      justify-items: center;
     }
 
     .grafico {
-      background: #222;
-      padding: 1rem;
+      background: #1e1e1e;
       border-radius: 12px;
+      padding: 1rem;
+      width: 100%;
+      max-width: 700px;
+      height: 400px; /* Altura fixa para manter legível */
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
 
     canvas {
       width: 100% !important;
-      height: auto !important;
+      height: 100% !important;
     }
   </style>
 </head>
@@ -46,6 +54,10 @@
     <div class="grafico"><canvas id="chart2"></canvas></div>
     <div class="grafico"><canvas id="chart3"></canvas></div>
     <div class="grafico"><canvas id="chart4"></canvas></div>
+    <div class="grafico"><canvas id="chart5"></canvas></div>
+    <div class="grafico"><canvas id="chart6"></canvas></div>
+    <div class="grafico"><canvas id="chart7"></canvas></div>
+    <div class="grafico"><canvas id="chart8"></canvas></div>
   </div>
 
   <script>
@@ -56,35 +68,49 @@
         legend: {
           labels: {
             color: 'white',
-            font: { size: Math.max(12, window.innerWidth / 80) }
+            font: { size: 14 }
           }
         }
       },
       scales: {
-        x: { ticks: { color: 'white' } },
-        y: { ticks: { color: 'white' } }
+        x: {
+          ticks: { color: 'white' },
+          grid: { color: '#333' }
+        },
+        y: {
+          ticks: { color: 'white' },
+          grid: { color: '#333' }
+        }
       }
     };
 
-    function criarGrafico(id) {
+    const labels = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'];
+    const dadosFicticios = [5, 12, 9, 14, 7, 10];
+
+    function criarGrafico(id, titulo, cor) {
       new Chart(document.getElementById(id), {
         type: 'line',
         data: {
-          labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai'],
+          labels,
           datasets: [{
-            label: 'Dados',
-            data: [5, 10, 7, 12, 8],
-            borderColor: 'cyan'
+            label: titulo,
+            data: dadosFicticios,
+            borderColor: cor,
+            backgroundColor: cor + '33'
           }]
         },
         options
       });
     }
 
-    criarGrafico('chart1');
-    criarGrafico('chart2');
-    criarGrafico('chart3');
-    criarGrafico('chart4');
+    criarGrafico('chart1', 'Temperatura Externa', 'cyan');
+    criarGrafico('chart2', 'Temperatura Interna', 'orange');
+    criarGrafico('chart3', 'Umidade do Solo', 'lime');
+    criarGrafico('chart4', 'Umidade Interna', 'blue');
+    criarGrafico('chart5', 'Peso', 'yellow');
+    criarGrafico('chart6', 'Luminosidade', 'magenta');
+    criarGrafico('chart7', 'CO₂ Interno', 'red');
+    criarGrafico('chart8', 'Umidade Externa', 'teal');
   </script>
 </body>
 </html>
