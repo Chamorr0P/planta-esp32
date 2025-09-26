@@ -41,7 +41,7 @@
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    // Criar gráfico
+    // Função para criar gráfico
     function criarGrafico(ctx, label, cor, min, max) {
       return new Chart(ctx, {
         type: 'line',
@@ -53,10 +53,12 @@
             borderColor: cor, // Cor da linha
             backgroundColor: cor, // Cor do ponto
             fill: false, // Não preencher a área abaixo da linha
-            tension: 0.4, // Tensão da linha (curvatura)
+            tension: 0.1, // Tensão da linha (curvatura)
             borderWidth: 2, // Largura da linha
-            pointRadius: 4, // Tamanho do ponto
-            pointBackgroundColor: cor // Cor do ponto
+            pointRadius: 5, // Tamanho do ponto
+            pointBackgroundColor: cor, // Cor do ponto
+            cubicInterpolationMode: 'monotone', // Faz a linha suave
+            steppedLine: false // Desativa a linha em degraus
           }]
         },
         options: {
@@ -71,7 +73,19 @@
             },
             x: {
               ticks: {
-                color: "white"
+                color: "white",
+                // Formatação de data no eixo X
+                callback: function(value, index, values) {
+                  return `${value} min`; // Exibe os minutos (pode personalizar para "tempo")
+                }
+              },
+              // Intervalo entre os ticks de 5 minutos
+              time: {
+                unit: 'minute',
+                stepSize: 5,  // Intervalo de 5 minutos
+                displayFormats: {
+                  minute: 'mm:ss'  // Formato da hora e minuto
+                }
               }
             }
           },
@@ -98,15 +112,21 @@
       umidadeExterna: criarGrafico(document.getElementById("umExterna"), "Umidade Externa (%)", "cyan", 0, 100)
     };
 
-    // Atualizar gráfico
-    function atualizarGrafico(grafico, tempo, valor) {
+    // Variável global para registrar o tempo em minutos
+    let minutoAtual = 0;
+
+    // Função para atualizar gráfico
+    function atualizarGrafico(grafico, valor) {
       if (grafico.data.labels.length > 10) {
         grafico.data.labels.shift();  // Remove o valor mais antigo
         grafico.data.datasets[0].data.shift();  // Remove o dado correspondente
       }
-      grafico.data.labels.push(tempo);  // Adiciona a label de tempo
+      // Adiciona o tempo em minutos no eixo X
+      grafico.data.labels.push(minutoAtual);
       grafico.data.datasets[0].data.push(valor);  // Adiciona o novo valor de dados
       grafico.update();  // Atualiza o gráfico
+
+      minutoAtual += 5; // A cada atualização, incrementa 5 minutos
     }
 
     // Escutar Firebase
@@ -114,15 +134,14 @@
     ref.on("value", (snap) => {
       const dados = snap.val();
       if (dados) {
-        const tempo = new Date().toLocaleTimeString();  // Pega a hora atual para adicionar como label
-        atualizarGrafico(graficos.temperaturaExterna, tempo, dados.temperaturaExterna);
-        atualizarGrafico(graficos.temperaturaInterna, tempo, dados.temperaturaInterna);
-        atualizarGrafico(graficos.umidadeSolo, tempo, dados.umidadeSolo);
-        atualizarGrafico(graficos.umidadeInterna, tempo, dados.umidadeInterna);
-        atualizarGrafico(graficos.peso, tempo, dados.peso);
-        atualizarGrafico(graficos.luminosidade, tempo, dados.luminosidade);
-        atualizarGrafico(graficos.co2Interno, tempo, dados.co2Interno);
-        atualizarGrafico(graficos.umidadeExterna, tempo, dados.umidadeExterna);
+        atualizarGrafico(graficos.temperaturaExterna, dados.temperaturaExterna);
+        atualizarGrafico(graficos.temperaturaInterna, dados.temperaturaInterna);
+        atualizarGrafico(graficos.umidadeSolo, dados.umidadeSolo);
+        atualizarGrafico(graficos.umidadeInterna, dados.umidadeInterna);
+        atualizarGrafico(graficos.peso, dados.peso);
+        atualizarGrafico(graficos.luminosidade, dados.luminosidade);
+        atualizarGrafico(graficos.co2Interno, dados.co2Interno);
+        atualizarGrafico(graficos.umidadeExterna, dados.umidadeExterna);
       }
     });
   </script>
