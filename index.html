@@ -44,14 +44,44 @@
     // Criar gráfico
     function criarGrafico(ctx, label, cor, min, max) {
       return new Chart(ctx, {
-        type:'line',
-        data:{ labels:[], datasets:[{ label:label, data:[], borderColor:cor, fill:false, tension:0.1 }] },
-        options:{
-          scales:{
-            y:{ min:min, max:max, ticks:{color:"white"} },
-            x:{ ticks:{color:"white"} }
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [{
+            label: label,
+            data: [],
+            borderColor: cor, // Cor da linha
+            backgroundColor: cor, // Cor do ponto
+            fill: false, // Não preencher a área abaixo da linha
+            tension: 0.4, // Tensão da linha (curvatura)
+            borderWidth: 2, // Largura da linha
+            pointRadius: 4, // Tamanho do ponto
+            pointBackgroundColor: cor // Cor do ponto
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              min: min,
+              max: max,
+              ticks: {
+                color: "white"
+              }
+            },
+            x: {
+              ticks: {
+                color: "white"
+              }
+            }
           },
-          plugins:{ legend:{ labels:{color:"white"} } }
+          plugins: {
+            legend: {
+              labels: {
+                color: "white"
+              }
+            }
+          }
         }
       });
     }
@@ -92,4 +122,9 @@
         atualizarGrafico(graficos.peso, tempo, dados.peso);
         atualizarGrafico(graficos.luminosidade, tempo, dados.luminosidade);
         atualizarGrafico(graficos.co2Interno, tempo, dados.co2Interno);
-        atualizarGrafico(graf
+        atualizarGrafico(graficos.umidadeExterna, tempo, dados.umidadeExterna);
+      }
+    });
+  </script>
+</body>
+</html>
