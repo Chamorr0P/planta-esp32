@@ -98,4 +98,41 @@
       umidadeExterna: criarGrafico(document.getElementById("umExterna"), "Umidade Externa (%)", "cyan", 0, 100)
     };
 
-    // Escuta alterações do Firebase (o cam
+    // Escuta alterações do Firebase (o caminho usado pelo ESP32: /plantaMonitoramento)
+    const ref = database.ref("plantaMonitoramento");
+    ref.on("value", (snapshot) => {
+      const dados = snapshot.val();
+      console.log("Dados recebidos:", dados);
+      document.getElementById("lastUpdate").innerText = new Date().toLocaleTimeString();
+
+      if (!dados) {
+        // nenhum dado ainda (por ex. retorna null)
+        return;
+      }
+
+      // Atualiza cada gráfico apenas se o valor existir e for numérico
+      if (typeof dados.temperaturaExterna === "number") atualizarGrafico(graficos.temperaturaExterna, new Date().toLocaleTimeString(), dados.temperaturaExterna);
+      if (typeof dados.temperaturaInterna === "number") atualizarGrafico(graficos.temperaturaInterna, new Date().toLocaleTimeString(), dados.temperaturaInterna);
+      if (typeof dados.umidadeSolo === "number") atualizarGrafico(graficos.umidadeSolo, new Date().toLocaleTimeString(), dados.umidadeSolo);
+      if (typeof dados.umidadeInterna === "number") atualizarGrafico(graficos.umidadeInterna, new Date().toLocaleTimeString(), dados.umidadeInterna);
+      if (typeof dados.peso === "number") atualizarGrafico(graficos.peso, new Date().toLocaleTimeString(), dados.peso);
+      if (typeof dados.luminosidade === "number") atualizarGrafico(graficos.luminosidade, new Date().toLocaleTimeString(), dados.luminosidade);
+      if (typeof dados.co2Interno === "number") atualizarGrafico(graficos.co2Interno, new Date().toLocaleTimeString(), dados.co2Interno);
+      if (typeof dados.umidadeExterna === "number") atualizarGrafico(graficos.umidadeExterna, new Date().toLocaleTimeString(), dados.umidadeExterna);
+    }, (err) => {
+      console.error("Erro ao escutar Firebase:", err);
+    });
+
+    // Função de atualização dos gráficos (limita a 20 pontos)
+    function atualizarGrafico(grafico, label, valor) {
+      if (grafico.data.labels.length >= 20) {
+        grafico.data.labels.shift();
+        grafico.data.datasets[0].data.shift();
+      }
+      grafico.data.labels.push(label);
+      grafico.data.datasets[0].data.push(valor);
+      grafico.update();
+    }
+  </script>
+</body>
+</html>
