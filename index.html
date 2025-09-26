@@ -28,7 +28,6 @@
   </div>
 
   <script>
-    // Configuração Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyBIC-LwIQSH9f2G8xAyXkd9kfVRR2RuT5Q",
       authDomain: "esp32-202508.firebaseapp.com",
@@ -41,19 +40,17 @@
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    // Função para criar gráfico
     function criarGrafico(ctx, label, cor, min, max) {
       return new Chart(ctx, {
         type: 'line',
         data: {
-          labels: [],
           datasets: [{
             label: label,
             data: [],
             borderColor: cor,
             backgroundColor: cor,
             fill: false,
-            tension: 0.3,
+            tension: 0, // linha reta para evitar pontos desaparecendo
             borderWidth: 2,
             pointStyle: 'circle',
             pointRadius: 5,
@@ -62,36 +59,48 @@
             pointBorderColor: cor,
             pointBorderWidth: 2,
             cubicInterpolationMode: 'monotone',
-            steppedLine: false
+            stepped: false
           }]
         },
         options: {
           responsive: true,
           scales: {
+            x: {
+              type: 'linear',   // eixo numérico para controlar ticks e posições
+              min: 0,
+              ticks: {
+                stepSize: 5,
+                color: "white",
+                callback: function(value) {
+                  return value + " min";
+                }
+              },
+              grid: {
+                color: "#444"
+              }
+            },
             y: {
               min: min,
               max: max,
-              ticks: { color: "white" },
-              grid: { color: "#444" }
-            },
-            x: {
               ticks: {
-                color: "white",
-                callback: function(value) {
-                  return `${value} min`;
-                }
+                color: "white"
               },
-              grid: { color: "#444" }
+              grid: {
+                color: "#444"
+              }
             }
           },
           plugins: {
-            legend: { labels: { color: "white" } }
+            legend: {
+              labels: {
+                color: "white"
+              }
+            }
           }
         }
       });
     }
 
-    // Cria todos os gráficos
     const graficos = {
       temperaturaExterna: criarGrafico(document.getElementById("tempExterna"), "Temperatura Externa (°C)", "orange", 15, 32),
       temperaturaInterna: criarGrafico(document.getElementById("tempInterna"), "Temperatura Interna (°C)", "red", 15, 32),
@@ -103,44 +112,44 @@
       umidadeExterna: criarGrafico(document.getElementById("umExterna"), "Umidade Externa (%)", "cyan", 0, 100)
     };
 
-    // Atualiza gráficos lendo todo histórico
+    // Atualiza os gráficos com os dados do Firebase
     const ref = database.ref("plantaMonitoramento");
     ref.on("value", (snapshot) => {
       const dados = snapshot.val();
       if (!dados) return;
 
+      // Dados esperado: objeto com várias chaves (timestamps), cada um com os dados do sensor
       const timestamps = Object.keys(dados).sort();
 
-      // Limpa os gráficos
-      for (const g of Object.values(graficos)) {
-        g.data.labels = [];
-        g.data.datasets[0].data = [];
+      // Limpar dados antigos
+      for (const grafico of Object.values(graficos)) {
+        grafico.data.datasets[0].data = [];
       }
 
       let minutoAtual = 0;
       for (const ts of timestamps) {
         const d = dados[ts];
 
-        atualizarGrafico(graficos.temperaturaExterna, d.temperaturaExterna, minutoAtual);
-        atualizarGrafico(graficos.temperaturaInterna, d.temperaturaInterna, minutoAtual);
-        atualizarGrafico(graficos.umidadeSolo, d.umidadeSolo, minutoAtual);
-        atualizarGrafico(graficos.umidadeInterna, d.umidadeInterna, minutoAtual);
-        atualizarGrafico(graficos.peso, d.peso, minutoAtual);
-        atualizarGrafico(graficos.luminosidade, d.luminosidade, minutoAtual);
-        atualizarGrafico(graficos.co2Interno, d.co2Interno, minutoAtual);
-        atualizarGrafico(graficos.umidadeExterna, d.umidadeExterna, minutoAtual);
+        adicionarDado(graficos.temperaturaExterna, minutoAtual, d.temperaturaExterna);
+        adicionarDado(graficos.temperaturaInterna, minutoAtual, d.temperaturaInterna);
+        adicionarDado(graficos.umidadeSolo, minutoAtual, d.umidadeSolo);
+        adicionarDado(graficos.umidadeInterna, minutoAtual, d.umidadeInterna);
+        adicionarDado(graficos.peso, minutoAtual, d.peso);
+        adicionarDado(graficos.luminosidade, minutoAtual, d.luminosidade);
+        adicionarDado(graficos.co2Interno, minutoAtual, d.co2Interno);
+        adicionarDado(graficos.umidadeExterna, minutoAtual, d.umidadeExterna);
 
         minutoAtual += 5;
       }
 
-      for (const g of Object.values(graficos)) {
-        g.update();
+      // Atualizar todos os gráficos
+      for (const grafico of Object.values(graficos)) {
+        grafico.update();
       }
     });
 
-    function atualizarGrafico(grafico, valor, minuto) {
-      grafico.data.labels.push(minuto);
-      grafico.data.datasets[0].data.push(valor);
+    function adicionarDado(grafico, x, y) {
+      grafico.data.datasets[0].data.push({ x, y });
     }
   </script>
 </body>
