@@ -41,51 +41,46 @@
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    // Função para criar gráfico
+    // Função para criar gráfico com escala de tempo
     function criarGrafico(ctx, label, cor, min, max) {
       return new Chart(ctx, {
         type: 'line',
         data: {
-          labels: [],
           datasets: [{
             label: label,
             data: [],
-            borderColor: cor, // Cor da linha
-            backgroundColor: cor, // Cor do ponto
-            fill: false, // Não preencher a área abaixo da linha
-            tension: 0.1, // Tensão da linha (curvatura)
-            borderWidth: 2, // Largura da linha
-            pointRadius: 5, // Tamanho do ponto
-            pointBackgroundColor: cor, // Cor do ponto
-            cubicInterpolationMode: 'monotone', // Faz a linha suave
-            steppedLine: false // Desativa a linha em degraus
+            borderColor: cor,
+            backgroundColor: cor,
+            fill: false,
+            tension: 0.3,
+            borderWidth: 2,
+            pointRadius: 3,
+            pointBackgroundColor: cor,
+            cubicInterpolationMode: 'monotone',
+            stepped: false
           }]
         },
         options: {
           responsive: true,
           scales: {
+            x: {
+              type: 'time',
+              time: {
+                unit: 'minute',
+                stepSize: 5,
+                displayFormats: {
+                  minute: 'HH:mm'
+                }
+              },
+              ticks: {
+                color: 'white'
+              }
+            },
             y: {
               min: min,
               max: max,
               ticks: {
-                color: "white"
-              }
-            },
-            x: {
-              ticks: {
-                color: "white",
-                // Formatação de data no eixo X
-                callback: function(value, index, values) {
-                  return `${value} min`; // Exibe os minutos (pode personalizar para "tempo")
-                }
-              },
-              // Intervalo entre os ticks de 5 minutos
-              time: {
-                unit: 'minute',
-                stepSize: 5,  // Intervalo de 5 minutos
-                displayFormats: {
-                  minute: 'mm:ss'  // Formato da hora e minuto
-                }
+                color: 'white'
               }
             }
           },
@@ -100,7 +95,7 @@
       });
     }
 
-    // Gráficos com limites
+    // Criar gráficos
     const graficos = {
       temperaturaExterna: criarGrafico(document.getElementById("tempExterna"), "Temperatura Externa (°C)", "orange", 15, 32),
       temperaturaInterna: criarGrafico(document.getElementById("tempInterna"), "Temperatura Interna (°C)", "red", 15, 32),
@@ -112,21 +107,17 @@
       umidadeExterna: criarGrafico(document.getElementById("umExterna"), "Umidade Externa (%)", "cyan", 0, 100)
     };
 
-    // Variável global para registrar o tempo em minutos
-    let minutoAtual = 0;
-
-    // Função para atualizar gráfico
+    // Função para atualizar gráfico com timestamp real
     function atualizarGrafico(grafico, valor) {
-      if (grafico.data.labels.length > 10) {
-        grafico.data.labels.shift();  // Remove o valor mais antigo
-        grafico.data.datasets[0].data.shift();  // Remove o dado correspondente
-      }
-      // Adiciona o tempo em minutos no eixo X
-      grafico.data.labels.push(minutoAtual);
-      grafico.data.datasets[0].data.push(valor);  // Adiciona o novo valor de dados
-      grafico.update();  // Atualiza o gráfico
+      const agora = new Date();
 
-      minutoAtual += 5; // A cada atualização, incrementa 5 minutos
+      // Limita para no máximo 12 pontos (1 hora se for de 5 em 5 min)
+      if (grafico.data.datasets[0].data.length > 12) {
+        grafico.data.datasets[0].data.shift();
+      }
+
+      grafico.data.datasets[0].data.push({ x: agora, y: valor });
+      grafico.update();
     }
 
     // Escutar Firebase
