@@ -71,12 +71,12 @@
     // Atualizar gráfico
     function atualizarGrafico(grafico, tempo, valor) {
       if (grafico.data.labels.length > 10) {
-        grafico.data.labels.shift();
-        grafico.data.datasets[0].data.shift();
+        grafico.data.labels.shift();  // Remove o valor mais antigo
+        grafico.data.datasets[0].data.shift();  // Remove o dado correspondente
       }
-      grafico.data.labels.push(tempo);
-      grafico.data.datasets[0].data.push(valor);
-      grafico.update();
+      grafico.data.labels.push(tempo);  // Adiciona a label de tempo
+      grafico.data.datasets[0].data.push(valor);  // Adiciona o novo valor de dados
+      grafico.update();  // Atualiza o gráfico
     }
 
     // Escutar Firebase
@@ -84,7 +84,7 @@
     ref.on("value", (snap) => {
       const dados = snap.val();
       if (dados) {
-        const tempo = new Date().toLocaleTimeString();
+        const tempo = new Date().toLocaleTimeString();  // Pega a hora atual para adicionar como label
         atualizarGrafico(graficos.temperaturaExterna, tempo, dados.temperaturaExterna);
         atualizarGrafico(graficos.temperaturaInterna, tempo, dados.temperaturaInterna);
         atualizarGrafico(graficos.umidadeSolo, tempo, dados.umidadeSolo);
@@ -92,9 +92,4 @@
         atualizarGrafico(graficos.peso, tempo, dados.peso);
         atualizarGrafico(graficos.luminosidade, tempo, dados.luminosidade);
         atualizarGrafico(graficos.co2Interno, tempo, dados.co2Interno);
-        atualizarGrafico(graficos.umidadeExterna, tempo, dados.umidadeExterna);
-      }
-    });
-  </script>
-</body>
-</html>
+        atualizarGrafico(graf
