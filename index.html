@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <title>Monitoramento em Tempo Real</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/luxon@3.4.3/build/global/luxon.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.3.1"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
   <style>
@@ -28,7 +30,7 @@
   </div>
 
   <script>
-    // Configuração Firebase
+    // Configuração do Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyBIC-LwIQSH9f2G8xAyXkd9kfVRR2RuT5Q",
       authDomain: "esp32-202508.firebaseapp.com",
@@ -48,16 +50,14 @@
         data: {
           datasets: [{
             label: label,
-            data: [],
+            data: [], // ← será preenchido dinamicamente
             borderColor: cor,
             backgroundColor: cor,
             fill: false,
             tension: 0.3,
             borderWidth: 2,
-            pointRadius: 3,
-            pointBackgroundColor: cor,
-            cubicInterpolationMode: 'monotone',
-            stepped: false
+            pointRadius: 4,
+            pointBackgroundColor: cor
           }]
         },
         options: {
@@ -87,7 +87,7 @@
           plugins: {
             legend: {
               labels: {
-                color: "white"
+                color: 'white'
               }
             }
           }
@@ -95,7 +95,7 @@
       });
     }
 
-    // Criar gráficos
+    // Criação dos gráficos
     const graficos = {
       temperaturaExterna: criarGrafico(document.getElementById("tempExterna"), "Temperatura Externa (°C)", "orange", 15, 32),
       temperaturaInterna: criarGrafico(document.getElementById("tempInterna"), "Temperatura Interna (°C)", "red", 15, 32),
@@ -107,28 +107,29 @@
       umidadeExterna: criarGrafico(document.getElementById("umExterna"), "Umidade Externa (%)", "cyan", 0, 100)
     };
 
-    // Função para atualizar gráfico com timestamp real
+    // Função para atualizar gráfico com o valor recebido do Firebase
     function atualizarGrafico(grafico, valor) {
-      const agora = new Date();  // Cria um timestamp com a data e hora atuais
-      console.log(`Atualizando gráfico com valor: ${valor} na hora: ${agora.toISOString()}`);  // Log de depuração para verificar valores
+      const agora = new Date();
 
-      // Limita para no máximo 12 pontos (1 hora se for de 5 em 5 min)
-      if (grafico.data.datasets[0].data.length > 12) {
-        grafico.data.datasets[0].data.shift();
+      if (!grafico) return;
+
+      // Limitar para no máximo 12 pontos (1 hora se for de 5 em 5 minutos)
+      const dataset = grafico.data.datasets[0];
+      if (dataset.data.length >= 12) {
+        dataset.data.shift();
       }
 
-      grafico.data.datasets[0].data.push({ x: agora, y: valor });
+      dataset.data.push({ x: agora, y: valor });
       grafico.update();
     }
 
-    // Escutar Firebase
+    // Função principal de escuta ao Firebase
     const ref = database.ref("plantaMonitoramento");
-    ref.on("value", (snap) => {
-      const dados = snap.val();
-      console.log("Dados recebidos do Firebase:", dados);  // Log de depuração
+    ref.on("value", (snapshot) => {
+      const dados = snapshot.val();
+      console.log("Dados recebidos do Firebase:", dados);
 
       if (dados) {
-        // Atualiza os gráficos com os dados recebidos do Firebase
         atualizarGrafico(graficos.temperaturaExterna, dados.temperaturaExterna);
         atualizarGrafico(graficos.temperaturaInterna, dados.temperaturaInterna);
         atualizarGrafico(graficos.umidadeSolo, dados.umidadeSolo);
@@ -137,6 +138,8 @@
         atualizarGrafico(graficos.luminosidade, dados.luminosidade);
         atualizarGrafico(graficos.co2Interno, dados.co2Interno);
         atualizarGrafico(graficos.umidadeExterna, dados.umidadeExterna);
+      } else {
+        console.warn("Nenhum dado encontrado no Firebase.");
       }
     });
   </script>
