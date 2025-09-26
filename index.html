@@ -109,7 +109,8 @@
 
     // Função para atualizar gráfico com timestamp real
     function atualizarGrafico(grafico, valor) {
-      const agora = new Date();
+      const agora = new Date();  // Cria um timestamp com a data e hora atuais
+      console.log(`Atualizando gráfico com valor: ${valor} na hora: ${agora.toISOString()}`);  // Log de depuração para verificar valores
 
       // Limita para no máximo 12 pontos (1 hora se for de 5 em 5 min)
       if (grafico.data.datasets[0].data.length > 12) {
@@ -124,7 +125,10 @@
     const ref = database.ref("plantaMonitoramento");
     ref.on("value", (snap) => {
       const dados = snap.val();
+      console.log("Dados recebidos do Firebase:", dados);  // Log de depuração
+
       if (dados) {
+        // Atualiza os gráficos com os dados recebidos do Firebase
         atualizarGrafico(graficos.temperaturaExterna, dados.temperaturaExterna);
         atualizarGrafico(graficos.temperaturaInterna, dados.temperaturaInterna);
         atualizarGrafico(graficos.umidadeSolo, dados.umidadeSolo);
