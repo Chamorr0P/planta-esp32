@@ -3,11 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <title>Monitoramento em Tempo Real</title>
+
+  <!-- Chart.js e adaptadores -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/luxon@3.4.3/build/global/luxon.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.3.1"></script>
+
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+
   <style>
     body { background:#1e1e1e; color:white; font-family:Arial; margin:0; }
     h2 { text-align:center; padding:20px; }
@@ -30,120 +35,126 @@
   </div>
 
   <script>
-  // Configuração Firebase
-  const firebaseConfig = {
-    apiKey: "AIzaSyBIC-LwIQSH9f2G8xAyXkd9kfVRR2RuT5Q",
-    authDomain: "esp32-202508.firebaseapp.com",
-    databaseURL: "https://esp32-202508-default-rtdb.firebaseio.com",
-    projectId: "esp32-202508",
-    storageBucket: "esp32-202508.appspot.com",
-    messagingSenderId: "549408137858",
-    appId: "1:549408137858:web:aaa8de1f1f87fc0d980a9b"
-  };
-  firebase.initializeApp(firebaseConfig);
-  const database = firebase.database();
+    // Configuração do Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyBIC-LwIQSH9f2G8xAyXkd9kfVRR2RuT5Q",
+      authDomain: "esp32-202508.firebaseapp.com",
+      databaseURL: "https://esp32-202508-default-rtdb.firebaseio.com",
+      projectId: "esp32-202508",
+      storageBucket: "esp32-202508.appspot.com",
+      messagingSenderId: "549408137858",
+      appId: "1:549408137858:web:aaa8de1f1f87fc0d980a9b"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
 
-  // Função para criar gráfico
-  function criarGrafico(ctx, label, cor, min, max) {
-    return new Chart(ctx, {
-      type: 'line',
-      data: {
-        datasets: [{
-          label: label,
-          data: [],
-          borderColor: cor,
-          backgroundColor: cor,
-          pointBackgroundColor: cor,
-          pointBorderColor: cor,
-          pointRadius: 4,
-          pointHoverRadius: 6,
-          tension: 0.3,
-          fill: false
-        }]
-      },
-      options: {
-        responsive: true,
-        scales: {
-          x: {
-            type: 'time',
-            time: {
-              unit: 'minute',
-              stepSize: 5,
-              displayFormats: {
-                minute: 'HH:mm'
+    // Função para criar gráfico com tempo
+    function criarGrafico(ctx, label, cor, min, max) {
+      return new Chart(ctx, {
+        type: 'line',
+        data: {
+          datasets: [{
+            label: label,
+            data: [],
+            borderColor: cor,
+            backgroundColor: cor,
+            pointBackgroundColor: cor,
+            pointBorderColor: cor,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            tension: 0.3,
+            fill: false
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            x: {
+              type: 'time',
+              time: {
+                unit: 'minute',
+                stepSize: 5,
+                displayFormats: {
+                  minute: 'HH:mm'
+                }
+              },
+              ticks: {
+                source: 'data',
+                autoSkip: false,
+                color: 'white'
+              },
+              grid: {
+                color: 'rgba(255,255,255,0.1)'
+              },
+              suggestedMin: new Date(Date.now() - 5 * 60 * 1000),
+              suggestedMax: new Date(Date.now() + 5 * 60 * 1000)
+            },
+            y: {
+              min: min,
+              max: max,
+              ticks: {
+                color: 'white'
+              },
+              grid: {
+                color: 'rgba(255,255,255,0.1)'
               }
-            },
-            ticks: {
-              color: 'white'
-            },
-            grid: {
-              color: 'rgba(255,255,255,0.1)' // Linhas de grade suaves e visíveis
             }
           },
-          y: {
-            min: min,
-            max: max,
-            ticks: {
-              color: 'white'
-            },
-            grid: {
-              color: 'rgba(255,255,255,0.1)'
-            }
-          }
-        },
-        plugins: {
-          legend: {
-            labels: {
-              color: 'white'
+          plugins: {
+            legend: {
+              labels: {
+                color: 'white'
+              }
             }
           }
         }
+      });
+    }
+
+    // Criar todos os gráficos
+    const graficos = {
+      temperaturaExterna: criarGrafico(document.getElementById("tempExterna"), "Temperatura Externa (°C)", "orange", 15, 32),
+      temperaturaInterna: criarGrafico(document.getElementById("tempInterna"), "Temperatura Interna (°C)", "red", 15, 32),
+      umidadeSolo: criarGrafico(document.getElementById("umSolo"), "Umidade do Solo (%)", "green", 0, 100),
+      umidadeInterna: criarGrafico(document.getElementById("umInterna"), "Umidade Interna (%)", "blue", 0, 100),
+      peso: criarGrafico(document.getElementById("peso"), "Peso (kg)", "yellow", 0, 10),
+      luminosidade: criarGrafico(document.getElementById("luz"), "Luminosidade (%)", "purple", 0, 100),
+      co2Interno: criarGrafico(document.getElementById("co2"), "CO2 Interno (ppm)", "pink", 300, 1000),
+      umidadeExterna: criarGrafico(document.getElementById("umExterna"), "Umidade Externa (%)", "cyan", 0, 100)
+    };
+
+    // Atualiza o gráfico com novos dados
+    function atualizarGrafico(grafico, valor) {
+      const agora = new Date();
+      const dataset = grafico.data.datasets[0];
+
+      if (dataset.data.length >= 12) {
+        dataset.data.shift();
+      }
+
+      dataset.data.push({ x: agora, y: valor });
+      grafico.update();
+    }
+
+    // Escuta os dados do Firebase
+    const ref = database.ref("plantaMonitoramento");
+    ref.on("value", (snapshot) => {
+      const dados = snapshot.val();
+      console.log("Dados recebidos do Firebase:", dados);
+
+      if (dados) {
+        atualizarGrafico(graficos.temperaturaExterna, dados.temperaturaExterna);
+        atualizarGrafico(graficos.temperaturaInterna, dados.temperaturaInterna);
+        atualizarGrafico(graficos.umidadeSolo, dados.umidadeSolo);
+        atualizarGrafico(graficos.umidadeInterna, dados.umidadeInterna);
+        atualizarGrafico(graficos.peso, dados.peso);
+        atualizarGrafico(graficos.luminosidade, dados.luminosidade);
+        atualizarGrafico(graficos.co2Interno, dados.co2Interno);
+        atualizarGrafico(graficos.umidadeExterna, dados.umidadeExterna);
+      } else {
+        console.warn("Nenhum dado recebido do Firebase.");
       }
     });
-  }
-
-  // Gráficos
-  const graficos = {
-    temperaturaExterna: criarGrafico(document.getElementById("tempExterna"), "Temperatura Externa (°C)", "orange", 15, 32),
-    temperaturaInterna: criarGrafico(document.getElementById("tempInterna"), "Temperatura Interna (°C)", "red", 15, 32),
-    umidadeSolo: criarGrafico(document.getElementById("umSolo"), "Umidade do Solo (%)", "green", 0, 100),
-    umidadeInterna: criarGrafico(document.getElementById("umInterna"), "Umidade Interna (%)", "blue", 0, 100),
-    peso: criarGrafico(document.getElementById("peso"), "Peso (kg)", "yellow", 0, 10),
-    luminosidade: criarGrafico(document.getElementById("luz"), "Luminosidade (%)", "purple", 0, 100),
-    co2Interno: criarGrafico(document.getElementById("co2"), "CO2 Interno (ppm)", "pink", 300, 1000),
-    umidadeExterna: criarGrafico(document.getElementById("umExterna"), "Umidade Externa (%)", "cyan", 0, 100)
-  };
-
-  // Atualiza os gráficos
-  function atualizarGrafico(grafico, valor) {
-    const agora = new Date();
-    const dataset = grafico.data.datasets[0];
-
-    if (dataset.data.length >= 12) {
-      dataset.data.shift(); // remove o mais antigo
-    }
-
-    dataset.data.push({ x: agora, y: valor });
-    grafico.update();
-  }
-
-  // Escuta dados do Firebase
-  const ref = database.ref("plantaMonitoramento");
-  ref.on("value", (snapshot) => {
-    const dados = snapshot.val();
-    console.log("Dados recebidos:", dados);
-
-    if (dados) {
-      atualizarGrafico(graficos.temperaturaExterna, dados.temperaturaExterna);
-      atualizarGrafico(graficos.temperaturaInterna, dados.temperaturaInterna);
-      atualizarGrafico(graficos.umidadeSolo, dados.umidadeSolo);
-      atualizarGrafico(graficos.umidadeInterna, dados.umidadeInterna);
-      atualizarGrafico(graficos.peso, dados.peso);
-      atualizarGrafico(graficos.luminosidade, dados.luminosidade);
-      atualizarGrafico(graficos.co2Interno, dados.co2Interno);
-      atualizarGrafico(graficos.umidadeExterna, dados.umidadeExterna);
-    }
-  });
-</script>
+  </script>
 </body>
 </html>
