@@ -50,7 +50,7 @@
             borderColor: cor,
             backgroundColor: cor,
             fill: false,
-            tension: 0, // linha reta para evitar pontos desaparecendo
+            tension: 0,
             borderWidth: 2,
             pointStyle: 'circle',
             pointRadius: 5,
@@ -66,21 +66,13 @@
           responsive: true,
           scales: {
             x: {
-              type: 'linear',   // eixo numérico para controlar ticks e posições
+              type: 'linear',
               min: 0,
               ticks: {
                 stepSize: 5,
                 color: "white",
                 callback: function(value) {
-                  // Modificar os valores do eixo X para "Semana 1 e 2", "Semana 3 e 4", etc.
-                  const semanas = [
-                    "Semana 1 e 2",
-                    "Semana 3 e 4",
-                    "Semana 5 e 6",
-                    "Semana 7 e 8",
-                    "Semana 9 e 10"
-                  ];
-                  return semanas[value / 5]; // Mapear cada valor de 0, 5, 10, 15, 20 para as semanas
+                  return value + " min";
                 }
               },
               grid: {
@@ -114,47 +106,106 @@
       temperaturaInterna: criarGrafico(document.getElementById("tempInterna"), "Temperatura Interna (°C)", "red", 15, 32),
       umidadeSolo: criarGrafico(document.getElementById("umSolo"), "Umidade do Solo (%)", "green", 0, 100),
       umidadeInterna: criarGrafico(document.getElementById("umInterna"), "Umidade Interna (%)", "blue", 0, 100),
-      peso: criarGrafico(document.getElementById("peso"), "Peso (kg)", "yellow", 0, 10),
+
+      // 🟡 Alteração apenas aqui no gráfico de peso:
+      peso: new Chart(document.getElementById("peso"), {
+        type: 'line',
+        data: {
+          datasets: [{
+            label: "Peso (kg)",
+            data: [],
+            borderColor: "yellow",
+            backgroundColor: "yellow",
+            fill: false,
+            tension: 0,
+            borderWidth: 2,
+            pointStyle: 'circle',
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            pointBackgroundColor: "yellow",
+            pointBorderColor: "yellow",
+            pointBorderWidth: 2,
+            cubicInterpolationMode: 'monotone',
+            stepped: false
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            x: {
+              type: 'linear',
+              min: 0,
+              ticks: {
+                stepSize: 5,
+                color: "white",
+                callback: function(value) {
+                  const semanas = {
+                    0: "Semanas 1 e 2",
+                    5: "Semanas 3 e 4",
+                    10: "Semanas 5 e 6",
+                    15: "Semanas 7 e 8",
+                    20: "Semanas 9 e 10"
+                  };
+                  return semanas[value] || "";
+                }
+              },
+              grid: {
+                color: "#444"
+              }
+            },
+            y: {
+              min: 0,
+              max: 10,
+              ticks: {
+                color: "white"
+              },
+              grid: {
+                color: "#444"
+              }
+            }
+          },
+          plugins: {
+            legend: {
+              labels: {
+                color: "white"
+              }
+            }
+          }
+        }
+      }),
+
       luminosidade: criarGrafico(document.getElementById("luz"), "Luminosidade (%)", "purple", 0, 100),
       co2Interno: criarGrafico(document.getElementById("co2"), "CO2 Interno (ppm)", "pink", 300, 1000),
       umidadeExterna: criarGrafico(document.getElementById("umExterna"), "Umidade Externa (%)", "cyan", 0, 100)
     };
 
-    // Atualiza os gráficos com os dados do Firebase
     const ref = database.ref("plantaMonitoramento");
     ref.on("value", (snapshot) => {
       const dados = snapshot.val();
       if (!dados) return;
 
-      // Dados esperado: objeto com várias chaves (timestamps), cada um com os dados do sensor
       const timestamps = Object.keys(dados).sort();
 
-      // Limpar dados antigos
       for (const grafico of Object.values(graficos)) {
         grafico.data.datasets[0].data = [];
       }
 
       let minutoAtual = 0;
-
       for (const ts of timestamps) {
         const d = dados[ts];
 
-        // Atualiza os gráficos com os dados do Firebase
         adicionarDado(graficos.temperaturaExterna, minutoAtual, d.temperaturaExterna);
         adicionarDado(graficos.temperaturaInterna, minutoAtual, d.temperaturaInterna);
         adicionarDado(graficos.umidadeSolo, minutoAtual, d.umidadeSolo);
         adicionarDado(graficos.umidadeInterna, minutoAtual, d.umidadeInterna);
+        adicionarDado(graficos.peso, minutoAtual, d.peso);
         adicionarDado(graficos.luminosidade, minutoAtual, d.luminosidade);
         adicionarDado(graficos.co2Interno, minutoAtual, d.co2Interno);
         adicionarDado(graficos.umidadeExterna, minutoAtual, d.umidadeExterna);
-        
-        // Para o gráfico de peso, mantemos a estrutura, mas apenas atualizamos os dados
-        adicionarDado(graficos.peso, minutoAtual, d.peso);
 
-        minutoAtual += 5;  // Incrementa de 5 em 5 minutos
+        minutoAtual += 5;
       }
 
-      // Atualizar todos os gráficos
       for (const grafico of Object.values(graficos)) {
         grafico.update();
       }
