@@ -127,17 +127,22 @@
       }
 
       let minutoAtual = 0;
+
       for (const ts of timestamps) {
         const d = dados[ts];
 
+        // Atualiza os gráficos com os dados do Firebase
         adicionarDado(graficos.temperaturaExterna, minutoAtual, d.temperaturaExterna);
         adicionarDado(graficos.temperaturaInterna, minutoAtual, d.temperaturaInterna);
         adicionarDado(graficos.umidadeSolo, minutoAtual, d.umidadeSolo);
         adicionarDado(graficos.umidadeInterna, minutoAtual, d.umidadeInterna);
-        adicionarDado(graficos.peso, minutoAtual, d.peso);
         adicionarDado(graficos.luminosidade, minutoAtual, d.luminosidade);
         adicionarDado(graficos.co2Interno, minutoAtual, d.co2Interno);
         adicionarDado(graficos.umidadeExterna, minutoAtual, d.umidadeExterna);
+        
+        // Para o gráfico de peso, vamos converter o timestamp para representar semanas
+        const semana = Math.floor(minutoAtual / 10) + 1;  // A cada 10 minutos, contamos como 2 semanas
+        adicionarDado(graficos.peso, semana, d.peso);
 
         minutoAtual += 5;
       }
