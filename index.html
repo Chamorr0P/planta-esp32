@@ -72,7 +72,15 @@
                 stepSize: 5,
                 color: "white",
                 callback: function(value) {
-                  return value + " min";
+                  // Modificar os valores do eixo X para "Semana 1 e 2", "Semana 3 e 4", etc.
+                  const semanas = [
+                    "Semana 1 e 2",
+                    "Semana 3 e 4",
+                    "Semana 5 e 6",
+                    "Semana 7 e 8",
+                    "Semana 9 e 10"
+                  ];
+                  return semanas[value / 5]; // Mapear cada valor de 0, 5, 10, 15, 20 para as semanas
                 }
               },
               grid: {
@@ -140,11 +148,10 @@
         adicionarDado(graficos.co2Interno, minutoAtual, d.co2Interno);
         adicionarDado(graficos.umidadeExterna, minutoAtual, d.umidadeExterna);
         
-        // Para o gráfico de peso, vamos converter o timestamp para representar semanas
-        const semana = Math.floor(minutoAtual / 10) + 1;  // A cada 10 minutos, contamos como 2 semanas
-        adicionarDado(graficos.peso, semana, d.peso);
+        // Para o gráfico de peso, mantemos a estrutura, mas apenas atualizamos os dados
+        adicionarDado(graficos.peso, minutoAtual, d.peso);
 
-        minutoAtual += 5;
+        minutoAtual += 5;  // Incrementa de 5 em 5 minutos
       }
 
       // Atualizar todos os gráficos
